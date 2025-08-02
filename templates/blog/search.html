@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="search-header">
+        <h1>Search Results</h1>
+        {% if query %}
+            <p class="search-info">
+                Showing results for: <strong>"{{ query }}"</strong>
+                {% if posts.total > 0 %}
+                    ({{ posts.total }} result{% if posts.total != 1 %}s{% endif %} found)
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-form-container">
+        <form method="GET" action="{{ url_for('blog.search') }}" class="search-form">
+            <div class="input-group">
+                <input type="text" name="q" value="{{ query or '' }}" 
+                       placeholder="Search blog posts..." class="form-control search-input">
+                <button type="submit" class="btn btn-primary search-btn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search Results -->
+    <div class="search-results">
+        {% if query %}
+            {% if posts.items %}
+                {% for post in posts.items %}
+                <div class="post-item">
+                    <div class="post-header">
+                        <h3><a href="{{ url_for('blog.post', id=post.id) }}">{{ post.title }}</a></h3>
+                        <div class="post-meta">
+                            <span class="author">By {{ post.author.username }}</span>
+                            <span class="date">{{ post.created_at.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="post-excerpt">
+                        {% set excerpt_length = 200 %}
+                        {% if query.lower() in post.content.lower() %}
+                            {% set query_pos = post.content.lower().find(query.lower()) %}
+                            {% set start = [0, query_pos - 50]|max %}
+                            {% set end = [post.content|length, start + excerpt_length]|min %}
+                            {% set excerpt = post.content[start:end] %}
+                            {% if start > 0 %}...{% endif %}
+                            {{ excerpt|replace(query, '<mark>' + query + '</mark>')|safe }}
+                            {% if end < post.content|length %}...{% endif %}
+                        {% else %}
+                            {{ post.content[:excerpt_length] }}{% if post.content|length > excerpt_length %}...{% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="post-actions">
+                        <a href="{{ url_for('blog.post', id=post.id) }}" class="btn btn-sm btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if posts.pages > 1 %}
+                <nav aria-label="Search results pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if posts.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('blog.search', q=query, page=posts.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in posts.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != posts.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('blog.search', q=query, page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if posts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('blog.search', q=query, page=posts.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="no-results">
+                    <div class="no-results-icon">
+                        <i class="fas fa-search fa-3x text-muted"></i>
+                    </div>
+                    <h3>No results found</h3>
+                    <p>We couldn't find any posts matching "<strong>{{ query }}</strong>".</p>
+                    <div class="search-suggestions">
+                        <h5>Try:</h5>
+                        <ul>
+                            <li>Checking your spelling</li>
+                            <li>Using different keywords</li>
+                            <li>Using more general terms</li>
+                            <li>Browsing <a href="{{ url_for('blog.index') }}">all posts</a></li>
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="search-help">
+                <div class="search-help-icon">
+                    <i class="fas fa-search fa-3x text-muted"></i>
+                </div>
+                <h3>Search Blog Posts</h3>
+                <p>Enter keywords to search through all blog posts. You can search by title or content.</p>
+                <div class="search-tips">
+                    <h5>Search Tips:</h5>
+                    <ul>
+                        <li>Use specific keywords for better results</li>
+                        <li>Search terms are case-insensitive</li>
+                        <li>Partial matches are supported</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

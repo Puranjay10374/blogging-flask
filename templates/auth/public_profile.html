@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <div class="d-flex align-items-center">
+            <img src="{{ user.avatar }}" alt="Avatar" class="rounded-circle me-3" style="width: 80px; height: 80px;">
+            <div>
+                <h1>{{ user.full_name }}</h1>
+                <p class="text-muted">@{{ user.username }}</p>
+                {% if user.location %}
+                <p class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ user.location }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if current_user.is_authenticated and current_user.id == user.id %}
+        <div class="profile-actions">
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-primary">Private Profile</a>
+            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-secondary">Edit Profile</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="profile-card">
+                <h3>About {{ user.first_name or user.username }}</h3>
+                <div class="profile-info">
+                    {% if user.bio %}
+                    <div class="info-item">
+                        <p>{{ user.bio }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.show_email %}
+                    <div class="info-item">
+                        <strong>Email:</strong>
+                        <span>{{ user.email }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.website %}
+                    <div class="info-item">
+                        <strong>Website:</strong>
+                        <span><a href="{{ user.website }}" target="_blank">{{ user.website }}</a></span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <strong>Member Since:</strong>
+                        <span>{{ user.created_at.strftime('%B %Y') }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <strong>Posts:</strong>
+                        <span>{{ post_count }}</span>
+                    </div>
+                </div>
+
+                {% if user.twitter_handle or user.linkedin_url or user.github_url %}
+                <div class="social-links mt-3">
+                    <h4>Connect</h4>
+                    {% if user.twitter_handle %}
+                    <a href="https://twitter.com/{{ user.twitter_handle }}" target="_blank" class="btn btn-sm btn-info me-2 mb-2">
+                        <i class="fab fa-twitter"></i> Twitter
+                    </a>
+                    {% endif %}
+                    {% if user.linkedin_url %}
+                    <a href="{{ user.linkedin_url }}" target="_blank" class="btn btn-sm btn-primary me-2 mb-2">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    {% endif %}
+                    {% if user.github_url %}
+                    <a href="{{ user.github_url }}" target="_blank" class="btn btn-sm btn-dark mb-2">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            {% if recent_posts %}
+            <div class="recent-posts">
+                <h3>{{ user.first_name or user.username }}'s Posts</h3>
+                {% for post in recent_posts %}
+                <div class="recent-post-item">
+                    <h4><a href="{{ url_for('blog.post', id=post.id) }}">{{ post.title }}</a></h4>
+                    <p class="post-meta">{{ post.created_at.strftime('%B %d, %Y') }}</p>
+                    <p class="post-excerpt">{{ post.content[:150] }}...</p>
+                </div>
+                {% endfor %}
+                
+                {% if post_count > recent_posts|length %}
+                <div class="text-center mt-3">
+                    <p class="text-muted">Showing {{ recent_posts|length }} of {{ post_count }} posts</p>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="no-posts">
+                <h3>No Posts Yet</h3>
+                <p>{{ user.first_name or user.username }} hasn't written any blog posts yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

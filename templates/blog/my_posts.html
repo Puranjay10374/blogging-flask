@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="blog-header">
+        <h1>My Posts</h1>
+        <a href="{{ url_for('blog.create') }}" class="btn">Write New Post</a>
+    </div>
+    
+    {% if posts.items %}
+        {% for post in posts.items %}
+            <article class="post-preview">
+                <h2><a href="{{ url_for('blog.post', id=post.id) }}">{{ post.title }}</a></h2>
+                <p class="post-meta">
+                    Created on {{ post.created_at.strftime('%B %d, %Y') }}
+                    {% if post.updated_at > post.created_at %}
+                        | Last updated: {{ post.updated_at.strftime('%B %d, %Y') }}
+                    {% endif %}
+                </p>
+                <p class="post-excerpt">{{ post.content[:200] }}...</p>
+                <div class="post-actions">
+                    <a href="{{ url_for('blog.post', id=post.id) }}" class="read-more">View</a>
+                    <a href="{{ url_for('blog.edit', id=post.id) }}" class="btn btn-sm">Edit</a>
+                    <form method="POST" action="{{ url_for('blog.delete', id=post.id) }}" style="display: inline;" 
+                          onsubmit="return confirm('Are you sure you want to delete this post?')">
+                        <input type="submit" value="Delete" class="btn btn-sm btn-danger">
+                    </form>
+                </div>
+            </article>
+        {% endfor %}
+        
+        <!-- Pagination -->
+        {% if posts.pages > 1 %}
+            <div class="pagination">
+                {% if posts.has_prev %}
+                    <a href="{{ url_for('blog.my_posts', page=posts.prev_num) }}">&laquo; Previous</a>
+                {% endif %}
+                
+                {% for page_num in posts.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != posts.page %}
+                            <a href="{{ url_for('blog.my_posts', page=page_num) }}">{{ page_num }}</a>
+                        {% else %}
+                            <span class="current">{{ page_num }}</span>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if posts.has_next %}
+                    <a href="{{ url_for('blog.my_posts', page=posts.next_num) }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-posts">
+            <p>You haven't written any posts yet.</p>
+            <a href="{{ url_for('blog.create') }}" class="btn">Write Your First Post</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

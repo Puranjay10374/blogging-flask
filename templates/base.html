@@ -10,17 +10,46 @@
     <nav>
         <div class="nav-container">
             <a href="{{ url_for('main.index') }}" class="logo">My Blog</a>
+            
+            <!-- Search Form -->
+            <div class="nav-search">
+                <form method="GET" action="{{ url_for('blog.search') }}" class="search-form-nav">
+                    <input type="text" name="q" placeholder="Search posts..." class="search-input-nav">
+                    <button type="submit" class="search-btn-nav">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.index') }}">Home</a></li>
                 <li><a href="{{ url_for('blog.index') }}">Blog</a></li>
+                <li><a href="{{ url_for('blog.search') }}">Search</a></li>
                 <li><a href="{{ url_for('main.about') }}">About</a></li>
-                <li><a href="{{ url_for('auth.login') }}">Login</a></li>
-                <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('blog.create') }}">Create Post</a></li>
+                    <li><a href="{{ url_for('blog.my_posts') }}">My Posts</a></li>
+                    <li><a href="{{ url_for('auth.profile') }}">Profile</a></li>
+                    <li><a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.username }})</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                    <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+                {% endif %}
             </ul>
         </div>
     </nav>
     
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
         {% block content %}{% endblock %}
     </main>
 </body>
