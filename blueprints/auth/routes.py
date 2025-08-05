@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from blueprints.auth import bp
 from models import db, User
-from forms import LoginForm, RegistrationForm, EditProfileForm, ChangePasswordForm, DeleteAccountForm
+from blueprints.auth.forms import LoginForm, RegistrationForm, EditProfileForm, ChangePasswordForm, DeleteAccountForm
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():

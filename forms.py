@@ -1,95 +1,91 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, PasswordField, SubmitField, BooleanField, URLField
-from wtforms.validators import DataRequired, EqualTo, Length, ValidationError, Optional, URL, Regexp
-from models import User
+from wtforms import StringField, TextAreaField, SubmitField, BooleanField, SelectField, DateField
+from wtforms.validators import DataRequired, Length, Optional, ValidationError
+from datetime import date
 
-# Simple email validation regex pattern
-EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Sign In')
-
-class RegistrationForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
-    email = StringField('Email', validators=[
-        DataRequired(), 
-        Regexp(EMAIL_REGEX, message='Please enter a valid email address.')
-    ])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    password2 = PasswordField('Repeat Password', validators=[
-        DataRequired(), EqualTo('password')])
-    submit = SubmitField('Register')
-
-    def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
-        if user is not None:
-            raise ValidationError('Please use a different username.')
-
-    def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
-        if user is not None:
-            raise ValidationError('Please use a different email address.')
+# Blog-related forms only (Auth forms moved to blueprints/auth/forms.py)
 
 class PostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired(), Length(max=200)])
-    content = TextAreaField('Content', validators=[DataRequired()])
-    submit = SubmitField('Submit')
+    title = StringField('Title', validators=[
+        DataRequired(message='Title is required'),
+        Length(min=5, max=200, message='Title must be between 5 and 200 characters')
+    ], render_kw={'placeholder': 'Enter an engaging title...', 'class': 'form-control'})
+    
+    content = TextAreaField('Content', validators=[
+        DataRequired(message='Content is required'),
+        Length(min=50, message='Content must be at least 50 characters')
+    ], render_kw={'rows': 15, 'placeholder': 'Write your blog post content here...', 'class': 'form-control'})
+    
+    excerpt = TextAreaField('Excerpt (Optional)', validators=[
+        Optional(),
+        Length(max=300, message='Excerpt cannot exceed 300 characters')
+    ], render_kw={'rows': 3, 'placeholder': 'Brief summary of your post...', 'class': 'form-control'})
+    
+    allow_comments = BooleanField('Allow comments', default=True)
+    is_published = BooleanField('Publish immediately', default=True)
+    
+    submit = SubmitField('Publish Post', render_kw={'class': 'btn btn-primary'})
 
 class SearchForm(FlaskForm):
-    query = StringField('Search', validators=[DataRequired(), Length(max=100)])
-    submit = SubmitField('Search')
-
-class EditProfileForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
-    email = StringField('Email', validators=[
-        DataRequired(), 
-        Regexp(EMAIL_REGEX, message='Please enter a valid email address.')
-    ])
-    first_name = StringField('First Name', validators=[Optional(), Length(max=50)])
-    last_name = StringField('Last Name', validators=[Optional(), Length(max=50)])
-    bio = TextAreaField('Bio', validators=[Optional(), Length(max=500)])
-    location = StringField('Location', validators=[Optional(), Length(max=100)])
-    website = URLField('Website', validators=[Optional(), URL()])
-    avatar_url = URLField('Avatar URL', validators=[Optional(), URL()])
+    query = StringField('Search', validators=[
+        Optional(),
+        Length(min=1, max=100, message='Search query must be between 1 and 100 characters')
+    ], render_kw={'placeholder': 'Search posts, titles, content...', 'class': 'form-control'})
     
-    # Social media links
-    twitter_handle = StringField('Twitter Handle', validators=[Optional(), Length(max=50)])
-    linkedin_url = URLField('LinkedIn URL', validators=[Optional(), URL()])
-    github_url = URLField('GitHub URL', validators=[Optional(), URL()])
+    submit = SubmitField('Search', render_kw={'class': 'btn btn-primary'})
+
+class AdvancedSearchForm(FlaskForm):
+    query = StringField('Search', validators=[
+        Optional(),
+        Length(min=1, max=100, message='Search query must be between 1 and 100 characters')
+    ], render_kw={'placeholder': 'Search posts, titles, content...', 'class': 'form-control'})
     
-    # Privacy settings
-    profile_public = BooleanField('Make Profile Public')
-    show_email = BooleanField('Show Email Publicly')
+    author = StringField('Author', validators=[Optional()], 
+                        render_kw={'placeholder': 'Author username', 'class': 'form-control'})
     
-    submit = SubmitField('Update Profile')
+    date_from = DateField('From Date', validators=[Optional()], format='%Y-%m-%d',
+                         render_kw={'class': 'form-control'})
+    date_to = DateField('To Date', validators=[Optional()], format='%Y-%m-%d',
+                       render_kw={'class': 'form-control'})
+    
+    sort_by = SelectField('Sort By', choices=[
+        ('newest', 'Newest First'),
+        ('oldest', 'Oldest First'),
+        ('most_liked', 'Most Liked'),
+        ('most_commented', 'Most Commented'),
+        ('title_asc', 'Title A-Z'),
+        ('title_desc', 'Title Z-A')
+    ], default='newest', render_kw={'class': 'form-control'})
+    
+    submit = SubmitField('Search', render_kw={'class': 'btn btn-primary'})
+    
+    def validate_date_range(self):
+        if self.date_from.data and self.date_to.data:
+            if self.date_from.data > self.date_to.data:
+                raise ValidationError('Start date must be before end date')
+            if self.date_from.data > date.today():
+                raise ValidationError('Start date cannot be in the future')
 
-    def __init__(self, original_username, original_email, *args, **kwargs):
-        super(EditProfileForm, self).__init__(*args, **kwargs)
-        self.original_username = original_username
-        self.original_email = original_email
+class CommentForm(FlaskForm):
+    content = TextAreaField('Comment', validators=[
+        DataRequired(message='Comment cannot be empty'),
+        Length(min=1, max=1000, message='Comment must be between 1 and 1000 characters')
+    ], render_kw={'placeholder': 'Write your comment here...', 'rows': 4, 'class': 'form-control'})
+    
+    submit = SubmitField('Post Comment', render_kw={'class': 'btn btn-primary'})
 
-    def validate_username(self, username):
-        if username.data != self.original_username:
-            user = User.query.filter_by(username=username.data).first()
-            if user is not None:
-                raise ValidationError('Please use a different username.')
+class ReplyForm(FlaskForm):
+    content = TextAreaField('Reply', validators=[
+        DataRequired(message='Reply cannot be empty'),
+        Length(min=1, max=500, message='Reply must be between 1 and 500 characters')
+    ], render_kw={'placeholder': 'Write your reply here...', 'rows': 3, 'class': 'form-control'})
+    
+    submit = SubmitField('Post Reply', render_kw={'class': 'btn btn-primary btn-sm'})
 
-    def validate_email(self, email):
-        if email.data != self.original_email:
-            user = User.query.filter_by(email=email.data).first()
-            if user is not None:
-                raise ValidationError('Please use a different email address.')
-
-class ChangePasswordForm(FlaskForm):
-    current_password = PasswordField('Current Password', validators=[DataRequired()])
-    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm New Password', validators=[
-        DataRequired(), EqualTo('new_password')])
-    submit = SubmitField('Change Password')
-
-class DeleteAccountForm(FlaskForm):
-    confirm_username = StringField('Type your username to confirm', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    submit = SubmitField('Delete My Account')
+class EditCommentForm(FlaskForm):
+    content = TextAreaField('Edit Comment', validators=[
+        DataRequired(message='Comment cannot be empty'),
+        Length(min=1, max=1000, message='Comment must be between 1 and 1000 characters')
+    ], render_kw={'rows': 4, 'class': 'form-control'})
+    
+    submit = SubmitField('Update Comment', render_kw={'class': 'btn btn-success'})

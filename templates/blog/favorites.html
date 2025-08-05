@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="favorites-header">
+        <h1>My Favorite Posts</h1>
+        <p class="favorites-count">
+            {% if favorite_count > 0 %}
+                You have {{ favorite_count }} favorite post{{ 's' if favorite_count != 1 else '' }}
+            {% else %}
+                You haven't liked any posts yet
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if posts.items %}
+        <div class="favorites-list">
+            {% for post in posts.items %}
+                <article class="post-preview favorite-item">
+                    <div class="favorite-header">
+                        <h2><a href="{{ url_for('blog.post', id=post.id) }}">{{ post.title }}</a></h2>
+                        <div class="favorite-actions">
+                            <form method="POST" action="{{ url_for('blog.like_post', post_id=post.id) }}" class="unlike-form">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from favorites">
+                                    💔 Unlike
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="post-meta">
+                        By {{ post.author.username }} on {{ post.created_at.strftime('%B %d, %Y') }}
+                        {% if post.get_all_comments_count() > 0 %}
+                            • <a href="{{ url_for('blog.post', id=post.id) }}#comments" class="comment-count">
+                                {{ post.get_all_comments_count() }} comment{{ 's' if post.get_all_comments_count() != 1 else '' }}
+                            </a>
+                        {% endif %}
+                        • <span class="like-count">
+                            ❤️ {{ post.get_like_count() }} like{{ 's' if post.get_like_count() != 1 else '' }}
+                        </span>
+                    </div>
+                    
+                    <div class="post-excerpt">
+                        {{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}
+                    </div>
+                    
+                    <div class="favorite-item-actions">
+                        <a href="{{ url_for('blog.post', id=post.id) }}" class="btn btn-primary btn-sm">Read Full Post</a>
+                        {% if current_user == post.author %}
+                            <a href="{{ url_for('blog.edit', id=post.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if posts.pages > 1 %}
+            <div class="pagination">
+                {% if posts.has_prev %}
+                    <a href="{{ url_for('blog.favorites', page=posts.prev_num) }}">&laquo; Previous</a>
+                {% endif %}
+                
+                {% for page_num in range(1, posts.pages + 1) %}
+                    {% if page_num == posts.page %}
+                        <span class="current">{{ page_num }}</span>
+                    {% elif page_num <= posts.page + 2 and page_num >= posts.page - 2 %}
+                        <a href="{{ url_for('blog.favorites', page=page_num) }}">{{ page_num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if posts.has_next %}
+                    <a href="{{ url_for('blog.favorites', page=posts.next_num) }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-favorites">
+            <div class="no-favorites-icon">💔</div>
+            <h3>No Favorite Posts Yet</h3>
+            <p>Start exploring and liking posts to build your favorites collection!</p>
+            <div class="no-favorites-actions">
+                <a href="{{ url_for('blog.index') }}" class="btn btn-primary">Browse All Posts</a>
+                <a href="{{ url_for('blog.search') }}" class="btn btn-secondary">Search Posts</a>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div class="favorites-navigation">
+        <a href="{{ url_for('blog.index') }}">&larr; Back to All Posts</a>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('auth.profile') }}">View Profile &rarr;</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Handle unlike forms
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.unlike-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!confirm('Remove this post from your favorites?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

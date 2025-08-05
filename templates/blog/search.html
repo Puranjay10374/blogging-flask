@@ -38,6 +38,16 @@
                         <div class="post-meta">
                             <span class="author">By {{ post.author.username }}</span>
                             <span class="date">{{ post.created_at.strftime('%B %d, %Y') }}</span>
+                            {% if post.get_all_comments_count() > 0 %}
+                                <span class="comment-count">
+                                    • {{ post.get_all_comments_count() }} comment{{ 's' if post.get_all_comments_count() != 1 else '' }}
+                                </span>
+                            {% endif %}
+                            {% if post.get_like_count() > 0 %}
+                                <span class="like-count">
+                                    • ❤️ {{ post.get_like_count() }} like{{ 's' if post.get_like_count() != 1 else '' }}
+                                </span>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="post-excerpt">

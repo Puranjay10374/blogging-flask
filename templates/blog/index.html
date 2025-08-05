@@ -15,6 +15,16 @@
                 <h2><a href="{{ url_for('blog.post', id=post.id) }}">{{ post.title }}</a></h2>
                 <p class="post-meta">
                     By {{ post.author.username }} on {{ post.created_at.strftime('%B %d, %Y') }}
+                    {% if post.get_all_comments_count() > 0 %}
+                        • <a href="{{ url_for('blog.post', id=post.id) }}#comments" class="comment-count">
+                            {{ post.get_all_comments_count() }} comment{{ 's' if post.get_all_comments_count() != 1 else '' }}
+                        </a>
+                    {% endif %}
+                    {% if post.get_like_count() > 0 %}
+                        • <span class="like-count">
+                            ❤️ {{ post.get_like_count() }} like{{ 's' if post.get_like_count() != 1 else '' }}
+                        </span>
+                    {% endif %}
                 </p>
                 <p class="post-excerpt">{{ post.content[:200] }}...</p>
                 <a href="{{ url_for('blog.post', id=post.id) }}" class="read-more">Read More</a>
